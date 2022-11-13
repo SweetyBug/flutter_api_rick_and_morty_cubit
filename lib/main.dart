@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rick_and/bloc/gallery_cubit.dart';
 import 'package:rick_and/screens/rick_and_morty.dart';
 
-
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData.dark(),
-      home: const MyHomePage(),
+    return BlocProvider(
+      create: (context) => GalleryCubit()..getCards(),
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: const MyHomePage(),
+      ),
     );
   }
 }

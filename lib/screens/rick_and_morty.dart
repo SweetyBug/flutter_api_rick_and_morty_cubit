@@ -1,85 +1,61 @@
 import 'package:flutter/material.dart';
-import '../services/network_helper.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rick_and/bloc/gallery_cubit.dart';
 
-class MyHomePage extends StatefulWidget {
+class MyHomePage extends StatelessWidget {
   const MyHomePage({Key? key}) : super(key: key);
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  Future<Map<String, String>>? images;
-
-  Future<Map<String, String>> getImages() async {
-    Map<String, String> images = {};
-    String url = "https://rickandmortyapi.com/api/character";
-    NetworkHelper networkHelper = NetworkHelper(url: url);
-
-    dynamic data = await networkHelper.getData();
-    List<dynamic> results = data["results"] as List;
-
-    for (int i = 0; i < results.length; i++) {
-      images[results[i]["name"]] = results[i]["image"];
-    }
-    return images;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    images = getImages();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rick and Morty APP"),
+        title: const Text("Rick and Morty"),
         centerTitle: true,
       ),
-      body: FutureBuilder(
-        future: images,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          Map? content = snapshot.data ?? {};
-          List entries = content!.entries.toList();
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.waiting:
-            case ConnectionState.active:
-              return const Center(
-                  child: CircularProgressIndicator(
-                color: Colors.white,
-              ));
-            case ConnectionState.done:
-              return SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: GridView.builder(
-                      itemCount: snapshot.data?.length ?? 0,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 6,
-                        mainAxisSpacing: 6,
-                      ),
-                      itemBuilder: (context, index) {
-                        return Card(
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Image.network(
-                                  entries.elementAt(index).value,
-                                ),
-                              ),
-                              Text("${entries.elementAt(index).key}"),
-                            ],
-                          ),
-                        );
-                      }),
-                ),
-              );
+      body: BlocBuilder<GalleryCubit, GalleryState>(
+        builder: (context, state) {
+          if (state is GalleryLoading) {
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.white,),);
           }
+          if (state is GalleryLoaded) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GridView.builder(
+                    itemCount: state.images.length,
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 6.0,
+                      mainAxisSpacing: 6.0,
+                    ),
+                    itemBuilder: (context, index) {
+                      return Card(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Image.network(state.images[index], fit: BoxFit.cover,),
+                            ),
+                            Text(state.names[index]),
+                          ],
+                        ),
+                      );
+                    }),
+              ),
+            );
+          }
+          if (state is GalleryError) {
+            return Center(
+              child: Container(
+                color: Colors.red,
+                child: const Text("ERROR... Sorry",
+                  style: TextStyle(fontSize: 30, color: Colors.black),
+                ),
+              ),
+            );
+          }
+          return Container();
         },
       ),
     );
