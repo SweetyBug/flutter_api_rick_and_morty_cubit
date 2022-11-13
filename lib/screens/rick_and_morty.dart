@@ -9,63 +9,78 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  Future<Map<String, String>>? images;
 
-  Future<List<String>>? images;
-
-  Future<List<String>> getImages() async {
-    List<String> images = [];
-
+  Future<Map<String, String>> getImages() async {
+    Map<String, String> images = {};
     String url = "https://rickandmortyapi.com/api/character";
     NetworkHelper networkHelper = NetworkHelper(url: url);
+
     dynamic data = await networkHelper.getData();
     List<dynamic> results = data["results"] as List;
+
     for (int i = 0; i < results.length; i++) {
-      images.add(results[i]["image"]);
+      images[results[i]["name"]] = results[i]["image"];
     }
     return images;
   }
 
   @override
   void initState() {
-    images = getImages();
     super.initState();
+    images = getImages();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Rick and Morty"),
+        title: const Text("Rick and Morty APP"),
         centerTitle: true,
       ),
-      body: SafeArea(
-        child: FutureBuilder(
-          future: images,
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.none:
-              case ConnectionState.waiting:
-              case ConnectionState.active:
-                return const Center(
+      body: FutureBuilder(
+        future: images,
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          Map? content = snapshot.data ?? {};
+          List entries = content!.entries.toList();
+          switch (snapshot.connectionState) {
+            case ConnectionState.none:
+            case ConnectionState.waiting:
+            case ConnectionState.active:
+              return const Center(
                   child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                );
-              case ConnectionState.done:
-                return GridView.builder(
-                    itemCount: snapshot.data?.length ?? 0,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 6,
-                      mainAxisSpacing: 6,
-                    ),
-                    itemBuilder: (context, index) {
-                      return Image.network(snapshot.data![index]);
-                    });
+                color: Colors.white,
+              ));
+            case ConnectionState.done:
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: GridView.builder(
+                      itemCount: snapshot.data?.length ?? 0,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
+                      ),
+                      itemBuilder: (context, index) {
+                        return Card(
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Image.network(
+                                  entries.elementAt(index).value,
+                                ),
+                              ),
+                              Text("${entries.elementAt(index).key}"),
+                            ],
+                          ),
+                        );
+                      }),
+                ),
+              );
           }
-
-          },
-        ),
+        },
       ),
     );
   }
